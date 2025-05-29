@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authAPI } from '@/services/api';
@@ -11,6 +10,8 @@ import { User, Mail, Phone, Lock, Save, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+const BASE_URL = 'http://127.0.0.1:8000';
 
 const Profile = () => {
   const { user, updateUser, logout } = useAuth();
@@ -30,6 +31,14 @@ const Profile = () => {
     old_password: '',
     new_password: '',
   });
+
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) return imagePath;
+    // Otherwise, append to base URL
+    return `${BASE_URL}${imagePath}`;
+  };
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData({
@@ -149,7 +158,7 @@ const Profile = () => {
                           src={
                             selectedImageFile
                               ? URL.createObjectURL(selectedImageFile)
-                              : user.profile_image
+                              : getImageUrl(user.profile_image || '')
                           }
                           alt={user.name}
                         />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,8 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Settings, LogOut } from 'lucide-react';
 
+const BASE_URL = 'http://127.0.0.1:8000';
+
 const Header = () => {
   const { user, logout } = useAuth();
+
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) return imagePath;
+    // Otherwise, append to base URL
+    return `${BASE_URL}${imagePath}`;
+  };
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -36,7 +45,7 @@ const Header = () => {
               Logout
             </Button>
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.profile_image} alt={user?.name} />
+              <AvatarImage src={getImageUrl(user?.profile_image || '')} alt={user?.name} />
               <AvatarFallback>
                 {user?.name.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
