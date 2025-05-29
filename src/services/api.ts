@@ -67,7 +67,7 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise
   const config: RequestInit = {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!(options.body instanceof FormData) && { 'Content-Type': 'application/json' }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
@@ -155,6 +155,13 @@ export const authAPI = {
     makeRequest('/api/auth/profile/', {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+
+  updateProfileImage: (formData: FormData): Promise<User> =>
+    makeRequest('/api/auth/profile/', {
+      method: 'PATCH',
+      headers: {}, // Don't set Content-Type for FormData, let browser set it
+      body: formData,
     }),
 
   changePassword: (data: ChangePasswordRequest) =>
