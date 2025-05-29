@@ -1,7 +1,7 @@
 
 import { secureStorage } from '@/utils/secureStorage';
 
-const BASE_URL = 'https://gs-continued-occurrence-cookbook.trycloudflare.com';
+const BASE_URL = 'https://will-downloaded-hispanic-walt.trycloudflare.com';
 
 export interface RegisterRequest {
   username: string;
