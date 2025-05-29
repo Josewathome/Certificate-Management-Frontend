@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authAPI } from '@/services/api';
@@ -15,13 +14,13 @@ const Profile = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+
   const [profileData, setProfileData] = useState({
     username: user?.username || '',
     email: user?.email || '',
     name: user?.name || '',
     phone_number: user?.phone_number || '',
-    profile_image: '',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -43,17 +42,31 @@ const Profile = () => {
     });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileData({
-          ...profileData,
-          profile_image: reader.result as string,
+      setSelectedImageFile(file);
+
+      const formData = new FormData();
+      formData.append('profile_image', file);
+
+      try {
+        setIsLoading(true);
+        const updatedUser = await authAPI.updateProfileImage(formData);
+        updateUser(updatedUser);
+        toast({
+          title: "Profile Image Updated",
+          description: "Your profile picture has been successfully updated.",
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Failed to update profile picture. Please try again.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -126,9 +139,16 @@ const Profile = () => {
                 <div className="flex justify-center">
                   <div className="relative">
                     <Avatar className="w-24 h-24">
-                      <AvatarImage src={user.profile_image} alt={user.name} />
+                      <AvatarImage
+                        src={
+                          selectedImageFile
+                            ? URL.createObjectURL(selectedImageFile)
+                            : user.profile_image
+                        }
+                        alt={user.name}
+                      />
                       <AvatarFallback className="text-xl">
-                        {user.name.split(' ').map(n => n[0]).join('')}
+                        {user.name?.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
                     <Label htmlFor="profile_image" className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90">
