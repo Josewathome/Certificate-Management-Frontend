@@ -10,6 +10,9 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import CreateCertificate from "./pages/CreateCertificate";
+import AddGraduants from "./pages/AddGraduants";
+import SendEmail from "./pages/SendEmail";
 import PasswordReset from "./pages/PasswordReset";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +42,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/create-certificate" 
+              element={
+                <ProtectedRoute>
+                  <CreateCertificate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/add-graduants" 
+              element={
+                <ProtectedRoute>
+                  <AddGraduants />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/send-email" 
+              element={
+                <ProtectedRoute>
+                  <SendEmail />
                 </ProtectedRoute>
               } 
             />

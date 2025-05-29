@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, Award, Users, Mail } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -55,6 +55,28 @@ const Index = () => {
           <p className="text-gray-600 mt-2">
             Ready to start your next project?
           </p>
+        </div>
+
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Link to="/create-certificate">
+            <Button className="w-full h-20 flex flex-col items-center justify-center gap-2 text-lg">
+              <Award className="h-8 w-8" />
+              Create Certificate
+            </Button>
+          </Link>
+          <Link to="/add-graduants">
+            <Button className="w-full h-20 flex flex-col items-center justify-center gap-2 text-lg" variant="outline">
+              <Users className="h-8 w-8" />
+              Add Graduants
+            </Button>
+          </Link>
+          <Link to="/send-email">
+            <Button className="w-full h-20 flex flex-col items-center justify-center gap-2 text-lg" variant="secondary">
+              <Mail className="h-8 w-8" />
+              Send Email
+            </Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
