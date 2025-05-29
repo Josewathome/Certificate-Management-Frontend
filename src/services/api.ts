@@ -1,6 +1,6 @@
 import { secureStorage } from '@/utils/secureStorage';
 
-const BASE_URL = 'https://will-downloaded-hispanic-walt.trycloudflare.com';
+const BASE_URL = 'https://calculated-diving-pension-utils.trycloudflare.com';
 
 export interface RegisterRequest {
   username: string;
