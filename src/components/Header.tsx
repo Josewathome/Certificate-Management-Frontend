@@ -14,11 +14,13 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
+            <Link to="/">
             <img 
               src="/lovable-uploads/29663671-8ba1-491f-9e2b-22ba42288eb9.png" 
               alt="Scratch & Script Logo" 
               className="h-10 mr-3"
             />
+            </Link>
             <h1 className="text-xl font-bold text-gray-900">Scratch & Script</h1>
           </div>
           
