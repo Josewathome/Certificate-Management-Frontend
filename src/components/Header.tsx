@@ -21,7 +21,7 @@ const Header = () => {
               className="h-10 mr-3"
             />
             </Link>
-            <h1 className="text-xl font-bold text-gray-900">Scratch & Script</h1>
+            { /* <h1 className="text-xl font-bold text-gray-900">Scratch & Script</h1> */}
           </div>
           
           <div className="flex items-center space-x-4">
