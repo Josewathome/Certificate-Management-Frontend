@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Settings, LogOut } from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -43,42 +44,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <img 
-                src="/lovable-uploads/29663671-8ba1-491f-9e2b-22ba42288eb9.png" 
-                alt="Scratch & Script Logo" 
-                className="h-10 mr-3"
-              />
-              <h1 className="text-xl font-bold text-gray-900">Scratch & Script</h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link to="/profile">
-                <Button variant="ghost" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Profile
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm" onClick={logout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.profile_image} alt={user?.name} />
-                <AvatarFallback>
-                  {user?.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">
             Welcome back, {user?.name}!
@@ -154,6 +123,8 @@ const Index = () => {
           </Card>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

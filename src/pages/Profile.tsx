@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authAPI } from '@/services/api';
@@ -8,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Mail, Phone, Lock, Save, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 const Profile = () => {
   const { user, updateUser, logout } = useAuth();
@@ -115,162 +118,168 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-          <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      
+      <main className="flex-1 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+            <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Profile Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>
-                Update your personal information and profile picture
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileSubmit} className="space-y-6">
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <Avatar className="w-24 h-24">
-                      <AvatarImage
-                        src={
-                          selectedImageFile
-                            ? URL.createObjectURL(selectedImageFile)
-                            : user.profile_image
-                        }
-                        alt={user.name}
-                      />
-                      <AvatarFallback className="text-xl">
-                        {user.name?.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Label htmlFor="profile_image" className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90">
-                      <Upload className="h-4 w-4" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Profile Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Profile Information
+                </CardTitle>
+                <CardDescription>
+                  Update your personal information and profile picture
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleProfileSubmit} className="space-y-6">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <Avatar className="w-24 h-24">
+                        <AvatarImage
+                          src={
+                            selectedImageFile
+                              ? URL.createObjectURL(selectedImageFile)
+                              : user.profile_image
+                          }
+                          alt={user.name}
+                        />
+                        <AvatarFallback className="text-xl">
+                          {user.name?.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Label htmlFor="profile_image" className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90">
+                        <Upload className="h-4 w-4" />
+                        <Input
+                          id="profile_image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Full Name</Label>
                       <Input
-                        id="profile_image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
+                        id="name"
+                        name="name"
+                        value={profileData.name}
+                        onChange={handleProfileChange}
+                        required
                       />
-                    </Label>
-                  </div>
-                </div>
+                    </div>
 
-                <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        name="username"
+                        value={profileData.username}
+                        onChange={handleProfileChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={profileData.email}
+                        onChange={handleProfileChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone_number">Phone Number</Label>
+                      <Input
+                        id="phone_number"
+                        name="phone_number"
+                        value={profileData.phone_number}
+                        onChange={handleProfileChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    <Save className="h-4 w-4 mr-2" />
+                    {isLoading ? 'Updating...' : 'Update Profile'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Password Change */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Change Password
+                </CardTitle>
+                <CardDescription>
+                  Update your password to keep your account secure
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="old_password">Current Password</Label>
                     <Input
-                      id="name"
-                      name="name"
-                      value={profileData.name}
-                      onChange={handleProfileChange}
+                      id="old_password"
+                      name="old_password"
+                      type="password"
+                      value={passwordData.old_password}
+                      onChange={handlePasswordChange}
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="new_password">New Password</Label>
                     <Input
-                      id="username"
-                      name="username"
-                      value={profileData.username}
-                      onChange={handleProfileChange}
+                      id="new_password"
+                      name="new_password"
+                      type="password"
+                      value={passwordData.new_password}
+                      onChange={handlePasswordChange}
                       required
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={profileData.email}
-                      onChange={handleProfileChange}
-                      required
-                    />
-                  </div>
+                  <Button type="submit" disabled={isChangingPassword} className="w-full">
+                    <Lock className="h-4 w-4 mr-2" />
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  </Button>
+                </form>
 
-                  <div>
-                    <Label htmlFor="phone_number">Phone Number</Label>
-                    <Input
-                      id="phone_number"
-                      name="phone_number"
-                      value={profileData.phone_number}
-                      onChange={handleProfileChange}
-                      required
-                    />
-                  </div>
+                <div className="mt-6 pt-6 border-t">
+                  <Button variant="destructive" onClick={logout} className="w-full">
+                    Log Out
+                  </Button>
                 </div>
-
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? 'Updating...' : 'Update Profile'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Password Change */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Change Password
-              </CardTitle>
-              <CardDescription>
-                Update your password to keep your account secure
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="old_password">Current Password</Label>
-                  <Input
-                    id="old_password"
-                    name="old_password"
-                    type="password"
-                    value={passwordData.old_password}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="new_password">New Password</Label>
-                  <Input
-                    id="new_password"
-                    name="new_password"
-                    type="password"
-                    value={passwordData.new_password}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </div>
-
-                <Button type="submit" disabled={isChangingPassword} className="w-full">
-                  <Lock className="h-4 w-4 mr-2" />
-                  {isChangingPassword ? 'Changing...' : 'Change Password'}
-                </Button>
-              </form>
-
-              <div className="mt-6 pt-6 border-t">
-                <Button variant="destructive" onClick={logout} className="w-full">
-                  Log Out
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
