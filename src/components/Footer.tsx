@@ -12,13 +12,14 @@ const Footer = () => {
               alt="Scratch & Script Logo" 
               className="h-8 mr-3"
             />
-            <span className="text-lg font-bold">Scratch & Script</span>
+            { /* <span className="text-lg font-bold">Scratch & Script</span> */ }
           </div>
           <div className="text-center md:text-right">
             <p className="text-gray-300">
-              © 2025 Scratch & Script. All rights reserved.
+              © {new Date().getFullYear()} Scratch & Script. All rights reserved.
             </p>
           </div>
+
         </div>
       </div>
     </footer>
