@@ -1,6 +1,6 @@
 import { secureStorage } from '@/utils/secureStorage';
 
-const BASE_URL = 'https://calculated-diving-pension-utils.trycloudflare.com';
+const BASE_URL = 'http://127.0.0.1:8000';
 
 export interface RegisterRequest {
   username: string;
@@ -52,6 +52,80 @@ export interface AuthResponse {
   access: string;
   refresh: string;
   user: User;
+}
+
+export interface CertificateRequest {
+  name: string;
+  description?: string;
+  cpe_hours?: string;
+  logo1?: File;
+  logo2?: File;
+  issued_date: string;
+  expiry_date?: string;
+}
+
+export interface Signatory {
+  id: number;
+  name: string;
+  logo: string | null;
+  signature: string | null;
+  title: string | null;
+  organization: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SignatoryRequest {
+  certificate: string; // UUID of the certificate
+  name: string;
+  logo?: File;
+  signature?: File;
+  title?: string;
+  organization?: string;
+}
+
+export interface Certificate {
+  id: string;
+  name: string;
+  description: string | null;
+  cpe_hours: string | null;
+  logo1: string | null;
+  logo2: string | null;
+  issued_date: string;
+  expiry_date: string | null;
+  created_at: string;
+  updated_at: string;
+  signatories: Signatory[];
+}
+
+export interface UserProfile extends User {
+  date_joined: string;
+  certificates: Certificate[];
+}
+
+export interface CertificateEntry {
+  id: number;
+  certificate: string;
+  name: string;
+  email: string;
+  member_no: string;
+  email_sent: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CertificateEntryRequest {
+  certificate: string;
+  name: string;
+  email: string;
+  member_no: string;
+}
+
+export interface CertificateEntriesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: CertificateEntry[];
 }
 
 class APIError extends Error {
@@ -183,4 +257,160 @@ export const authAPI = {
     }),
 
   refreshToken: refreshAccessToken,
+};
+
+export const certificateAPI = {
+  create: (data: CertificateRequest): Promise<Certificate> => {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    return makeRequest('/api/auth/certificates/', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  update: (id: string, data: Partial<CertificateRequest>): Promise<Certificate> => {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    return makeRequest(`/api/auth/certificates/${id}/`, {
+      method: 'PATCH',
+      body: formData,
+    });
+  },
+
+  delete: (id: string): Promise<void> =>
+    makeRequest(`/api/auth/certificates/${id}/`, {
+      method: 'DELETE',
+    }),
+
+  getAll: (): Promise<Certificate[]> =>
+    makeRequest('/api/auth/certificates/', {
+      method: 'GET',
+    }),
+
+  getById: (id: string): Promise<Certificate> =>
+    makeRequest(`/api/auth/certificates/${id}/`, {
+      method: 'GET',
+    }),
+};
+
+export const signatoryAPI = {
+  create: (data: SignatoryRequest): Promise<Signatory> => {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    return makeRequest('/api/auth/signatory/', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  update: (id: number, data: Partial<SignatoryRequest>): Promise<Signatory> => {
+    const formData = new FormData();
+    formData.append('id', id.toString());
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, value);
+      }
+    });
+
+    return makeRequest('/api/auth/signatory/', {
+      method: 'PATCH',
+      body: formData,
+    });
+  },
+
+  delete: (id: number): Promise<void> =>
+    makeRequest('/api/auth/signatory/', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    }),
+};
+
+export const profileAPI = {
+  getProfile: (): Promise<UserProfile> =>
+    makeRequest('/api/auth/view-all/', {
+      method: 'GET',
+    }),
+
+  deleteCertificate: (id: string): Promise<void> =>
+    makeRequest(`/api/auth/certificates/${id}/`, {
+      method: 'DELETE',
+    }),
+};
+
+export const certificateEntriesAPI = {
+  create: (data: CertificateEntryRequest): Promise<CertificateEntry> =>
+    makeRequest('/api/auth/CertificateEntry/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: Partial<CertificateEntryRequest>): Promise<CertificateEntry> =>
+    makeRequest('/api/auth/CertificateEntry/', {
+      method: 'PATCH',
+      body: JSON.stringify({ id, ...data }),
+    }),
+
+  delete: (id: number): Promise<void> =>
+    makeRequest('/api/auth/CertificateEntry/', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    }),
+
+  uploadFile: (certificateId: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('certificate_id', certificateId);
+    formData.append('file', file);
+
+    return makeRequest('/api/auth/certificates/upload/', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  getEntries: (params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    certificate__id?: string;
+  }): Promise<CertificateEntriesResponse> => {
+    const searchParams = new URLSearchParams();
+    if (params.search) searchParams.append('search', params.search);
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.certificate__id) searchParams.append('certificate__id', params.certificate__id);
+
+    return makeRequest(`/api/auth/certificate-entries/?${searchParams.toString()}`, {
+      method: 'GET',
+    });
+  },
+};
+
+export const certificateGenerationAPI = {
+  generate: (certificateId: string): Promise<void> =>
+    makeRequest('/generate-certificates/', {
+      method: 'POST',
+      body: JSON.stringify({ certificate_id: certificateId }),
+    }),
+
+  sendEmails: (certificateId: string): Promise<{ success: number; total: number }> =>
+    makeRequest(`/api/auth/send-certificate-emails/`, {
+      method: 'POST',
+      body: JSON.stringify({ certificate_id: certificateId }),
+    }),
 };

@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -11,10 +10,12 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import CreateCertificate from "./pages/CreateCertificate";
+import Certificates from "./pages/Certificates";
 import AddGraduants from "./pages/AddGraduants";
 import SendEmail from "./pages/SendEmail";
 import PasswordReset from "./pages/PasswordReset";
 import NotFound from "./pages/NotFound";
+import Dashboard from '@/pages/Dashboard';
 
 const queryClient = new QueryClient();
 
@@ -24,8 +25,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
+        <Router>
           <Routes>
+            <Route path="/" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/password-reset" element={<PasswordReset />} />
@@ -33,7 +35,7 @@ const App = () => (
               path="/" 
               element={
                 <ProtectedRoute>
-                  <Index />
+                  <Certificates />
                 </ProtectedRoute>
               } 
             />
@@ -50,6 +52,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreateCertificate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/edit-certificate/:id" 
+              element={
+                <ProtectedRoute>
+                  <CreateCertificate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/certificates" 
+              element={
+                <ProtectedRoute>
+                  <Navigate to="/" replace />
                 </ProtectedRoute>
               } 
             />
@@ -71,7 +89,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
