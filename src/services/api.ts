@@ -1,3 +1,4 @@
+
 import { secureStorage } from '@/utils/secureStorage';
 import { tokenManager } from '@/utils/tokenManager';
 
@@ -138,13 +139,24 @@ class APIError extends Error {
 const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
   const url = `${BASE_URL}${endpoint}`;
   
-  // Ensure we have a valid token before making the request
-  const token = await tokenManager.ensureValidToken();
+  // For authentication endpoints, don't require token
+  const isAuthEndpoint = [
+    '/api/auth/login/',
+    '/api/auth/register/',
+    '/api/auth/password-reset/',
+    '/api/auth/password-reset/confirm/'
+  ].includes(endpoint);
   
-  if (!token && endpoint !== '/api/auth/login/' && endpoint !== '/api/auth/register/' && endpoint !== '/api/auth/password-reset/' && endpoint !== '/api/auth/password-reset/confirm/') {
-    // No valid token for protected endpoints
-    tokenManager.performSecureLogout();
-    throw new APIError(401, { detail: 'Authentication required' });
+  // Ensure we have a valid token before making the request (except for auth endpoints)
+  let token: string | null = null;
+  if (!isAuthEndpoint) {
+    token = await tokenManager.ensureValidToken();
+    
+    if (!token) {
+      // No valid token for protected endpoints - trigger logout
+      tokenManager.handleRefreshFailure();
+      throw new APIError(401, { detail: 'Authentication required' });
+    }
   }
   
   const config: RequestInit = {
@@ -169,39 +181,42 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise
     }
 
     if (!response.ok) {
-      // Handle authentication errors
-      if (response.status === 401) {
-        // If this was already a retry or if token refresh fails, perform secure logout
-        if (config.headers?.['Authorization']?.includes('Bearer')) {
+      // Handle authentication errors for protected endpoints
+      if (response.status === 401 && !isAuthEndpoint) {
+        // Check if this is an expired token error
+        if (data?.detail?.includes('token') || data?.code === 'token_not_valid') {
+          // Try to refresh the token
           const refreshSuccess = await tokenManager.refreshAccessToken();
-          if (!refreshSuccess) {
-            tokenManager.performSecureLogout();
+          
+          if (refreshSuccess) {
+            // Retry the request with the new token
+            const newToken = secureStorage.getAccessToken();
+            const retryConfig = {
+              ...config,
+              headers: {
+                ...config.headers,
+                Authorization: `Bearer ${newToken}`,
+              },
+            };
+            
+            const retryResponse = await fetch(url, retryConfig);
+            let retryData;
+            const retryContentType = retryResponse.headers.get('content-type');
+            if (retryContentType && retryContentType.includes('application/json')) {
+              retryData = await retryResponse.json();
+            } else {
+              retryData = await retryResponse.text();
+            }
+            
+            if (!retryResponse.ok) {
+              throw new APIError(retryResponse.status, retryData);
+            }
+            return retryData;
+          } else {
+            // Refresh failed, trigger logout
+            tokenManager.handleRefreshFailure();
             throw new APIError(401, { detail: 'Session expired. Please login again.' });
           }
-          
-          // Retry the request with the new token
-          const newToken = secureStorage.getAccessToken();
-          const retryConfig = {
-            ...config,
-            headers: {
-              ...config.headers,
-              Authorization: `Bearer ${newToken}`,
-            },
-          };
-          
-          const retryResponse = await fetch(url, retryConfig);
-          let retryData;
-          const retryContentType = retryResponse.headers.get('content-type');
-          if (retryContentType && retryContentType.includes('application/json')) {
-            retryData = await retryResponse.json();
-          } else {
-            retryData = await retryResponse.text();
-          }
-          
-          if (!retryResponse.ok) {
-            throw new APIError(retryResponse.status, retryData);
-          }
-          return retryData;
         }
       }
       

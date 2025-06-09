@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { secureStorage, StoredAuth } from '@/utils/secureStorage';
 import { tokenManager } from '@/utils/tokenManager';
 import { authAPI, User, LoginRequest, RegisterRequest } from '@/services/api';
@@ -33,6 +33,7 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,18 +50,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (refreshSuccess) {
             setUser(storedAuth.user);
           } else {
-            // Refresh failed, clear storage
-            performLogout(false); // Don't show toast on init
+            // Refresh failed, clear storage and redirect to login
+            performLogout(false);
           }
         } else {
-          // Invalid token, clear storage
-          performLogout(false); // Don't show toast on init
+          // Invalid token, clear storage and redirect to login
+          performLogout(false);
         }
       }
       setIsLoading(false);
     };
 
     initAuth();
+
+    // Listen for auth refresh failures
+    const handleRefreshFailure = () => {
+      performLogout(true);
+      toast({
+        variant: "destructive",
+        title: "Session Expired",
+        description: "Please login again to continue.",
+      });
+    };
+
+    window.addEventListener('auth:refresh-failed', handleRefreshFailure);
 
     // Set up periodic token validation (every 5 minutes)
     const interval = setInterval(async () => {
@@ -69,8 +82,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     }, 5 * 60 * 1000);
 
-    return () => clearInterval(interval);
-  }, [user]);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('auth:refresh-failed', handleRefreshFailure);
+    };
+  }, [user, navigate, toast]);
 
   const checkAuthStatus = async (): Promise<void> => {
     const validation = tokenManager.validateToken();
@@ -112,6 +128,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         title: "Welcome back!",
         description: `Hello ${response.user.name}`,
       });
+      
+      // Navigate to dashboard after successful login
+      navigate('/');
     } catch (error: any) {
       let message = "Login failed. Please try again.";
       
@@ -167,6 +186,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         description: "You have been successfully logged out.",
       });
     }
+    
+    // Navigate to login page after logout
+    navigate('/login');
   };
 
   const logout = (): void => {

@@ -86,6 +86,13 @@ class TokenManager {
         return true;
       }
       
+      // Handle specific 401 responses from your API
+      if (response.status === 401) {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Token refresh failed - refresh token expired:', errorData);
+        return false;
+      }
+      
       console.log('Token refresh failed:', response.status);
       return false;
     } catch (error) {
@@ -144,6 +151,15 @@ class TokenManager {
     }
     
     return secureStorage.getAccessToken();
+  }
+
+  /**
+   * Called by API service when refresh fails to trigger logout
+   */
+  handleRefreshFailure(): void {
+    this.performSecureLogout();
+    // Dispatch a custom event that AuthContext can listen to
+    window.dispatchEvent(new CustomEvent('auth:refresh-failed'));
   }
 }
 
