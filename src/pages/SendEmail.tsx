@@ -1,9 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -19,22 +17,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, Send, Users, FileText, FileCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Mail, Send, FileCheck, AlertCircle, CheckCircle2, Users, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import DashboardLayout from '@/components/DashboardLayout';
 import { profileAPI, certificateEntriesAPI, certificateGenerationAPI, type Certificate, type CertificateEntry } from '@/services/api';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { usePagination } from '@/hooks/usePagination';
+import { EnhancedPagination } from '@/components/ui/enhanced-pagination';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 const SendEmail = () => {
   const { toast } = useToast();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [selectedCertificate, setSelectedCertificate] = useState<string>('');
   const [entries, setEntries] = useState<CertificateEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [filteredEntries, setFilteredEntries] = useState<CertificateEntry[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'sent' | 'pending'>('all');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+  const pagination = usePagination({
+    itemsPerPage: 10,
+    totalItems: filteredEntries.length,
+  });
 
   useEffect(() => {
     loadCertificates();
@@ -45,8 +54,17 @@ const SendEmail = () => {
       loadEntries();
     } else {
       setEntries([]);
+      setFilteredEntries([]);
     }
   }, [selectedCertificate]);
+
+  useEffect(() => {
+    filterEntries();
+  }, [entries, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    pagination.setTotalItems(filteredEntries.length);
+  }, [filteredEntries.length, pagination]);
 
   const loadCertificates = async () => {
     try {
@@ -64,11 +82,11 @@ const SendEmail = () => {
   const loadEntries = async () => {
     if (!selectedCertificate) return;
 
-    setIsLoading(true);
+    pagination.setIsLoading(true);
     try {
       const response = await certificateEntriesAPI.getEntries({
         certificate__id: selectedCertificate,
-        limit: 100, // Adjust as needed
+        limit: 1000, // Load all entries for client-side filtering
       });
       setEntries(response.results);
     } catch (error) {
@@ -78,8 +96,31 @@ const SendEmail = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      pagination.setIsLoading(false);
     }
+  };
+
+  const filterEntries = () => {
+    let filtered = entries;
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(entry =>
+        entry.name.toLowerCase().includes(query) ||
+        entry.email.toLowerCase().includes(query) ||
+        entry.member_no.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(entry =>
+        statusFilter === 'sent' ? entry.email_sent : !entry.email_sent
+      );
+    }
+
+    setFilteredEntries(filtered);
   };
 
   const handleGenerateCertificates = async () => {
@@ -99,7 +140,7 @@ const SendEmail = () => {
         title: "Success",
         description: "Certificates generated successfully.",
       });
-      loadEntries(); // Refresh the list
+      loadEntries();
     } catch (error: any) {
       let errorMessage = "Failed to generate certificates. Please try again.";
       if (error.data?.error === 'Invalid certificate ID format') {
@@ -134,7 +175,7 @@ const SendEmail = () => {
         title: "Success",
         description: `Successfully sent ${result.success} out of ${result.total} emails.`,
       });
-      loadEntries(); // Refresh the list to update email_sent status
+      loadEntries();
     } catch (error) {
       toast({
         title: "Error",
@@ -149,17 +190,27 @@ const SendEmail = () => {
   const pendingEmails = entries.filter(entry => !entry.email_sent).length;
   const sentEmails = entries.filter(entry => entry.email_sent).length;
 
+  // Get paginated entries
+  const paginatedEntries = filteredEntries.slice(
+    pagination.startIndex,
+    pagination.endIndex
+  );
+
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Mail className="h-8 w-8" />
-          Send Certificates
-        </h1>
-        <p className="text-gray-600 mt-2">Generate and send certificates to graduants</p>
-      </div>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+              <Mail className="h-8 w-8" />
+              Send Certificates
+            </h1>
+            <p className="text-gray-600 mt-2">Generate and send certificates to graduants</p>
+          </div>
+        </div>
 
-      <div className="space-y-6">
+        {/* Certificate Selection */}
         <Card>
           <CardHeader>
             <CardTitle>Select Certificate</CardTitle>
@@ -186,10 +237,14 @@ const SendEmail = () => {
 
         {selectedCertificate && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Action Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Generate Certificates</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileCheck className="h-5 w-5" />
+                    Generate Certificates
+                  </CardTitle>
                   <CardDescription>Create PDF certificates for all graduants</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -198,15 +253,27 @@ const SendEmail = () => {
                     onClick={handleGenerateCertificates}
                     disabled={isGenerating || entries.length === 0}
                   >
-                    <FileCheck className="h-4 w-4 mr-2" />
-                    {isGenerating ? 'Generating...' : 'Generate Certificates'}
+                    {isGenerating ? (
+                      <>
+                        <LoadingState size="sm" className="mr-2" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <FileCheck className="h-4 w-4 mr-2" />
+                        Generate Certificates
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Send Emails</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Send className="h-5 w-5" />
+                    Send Emails
+                  </CardTitle>
                   <CardDescription>Send certificates to graduants via email</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -215,68 +282,132 @@ const SendEmail = () => {
                     onClick={handleSendEmails}
                     disabled={isSending || pendingEmails === 0}
                   >
-                    <Mail className="h-4 w-4 mr-2" />
-                    {isSending ? 'Sending...' : 'Send Emails'}
+                    {isSending ? (
+                      <>
+                        <LoadingState size="sm" className="mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Emails ({pendingEmails} pending)
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Status Overview */}
+            <Alert>
+              <Users className="h-4 w-4" />
+              <AlertTitle>Status Overview</AlertTitle>
+              <AlertDescription className="flex flex-wrap gap-4 mt-2">
+                <Badge variant="outline">{entries.length} total graduants</Badge>
+                <Badge variant="default" className="bg-green-500">{sentEmails} emails sent</Badge>
+                <Badge variant="secondary">{pendingEmails} pending</Badge>
+              </AlertDescription>
+            </Alert>
+
+            {/* Filters and Search */}
             <Card>
               <CardHeader>
-                <CardTitle>Email Status</CardTitle>
-                <CardDescription>Track email delivery status</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filter Graduants
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Alert>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertTitle>Status Overview</AlertTitle>
-                    <AlertDescription>
-                      {entries.length} total graduants | {sentEmails} emails sent | {pendingEmails} pending
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Member No</TableHead>
-                          <TableHead className="text-right">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {entries.map((entry) => (
-                          <TableRow key={entry.id}>
-                            <TableCell>{entry.name}</TableCell>
-                            <TableCell>{entry.email}</TableCell>
-                            <TableCell>{entry.member_no}</TableCell>
-                            <TableCell className="text-right">
-                              {entry.email_sent ? (
-                                <span className="text-green-600 flex items-center justify-end">
-                                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                                  Sent
-                                </span>
-                              ) : (
-                                <span className="text-yellow-600 flex items-center justify-end">
-                                  <AlertCircle className="h-4 w-4 mr-1" />
-                                  Pending
-                                </span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    {entries.length === 0 && (
-                      <div className="text-center py-4 text-gray-500">
-                        No graduants found
-                      </div>
-                    )}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search by name, email, or member number..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value: 'all' | 'sent' | 'pending') => setStatusFilter(value)}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="sent">Sent</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Graduants Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Graduants List</CardTitle>
+                <CardDescription>
+                  {filteredEntries.length} of {entries.length} graduants
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pagination.isLoading ? (
+                  <LoadingState />
+                ) : filteredEntries.length === 0 ? (
+                  <EmptyState
+                    icon={<Users className="h-12 w-12" />}
+                    title="No graduants found"
+                    description={entries.length === 0 
+                      ? "No graduants have been added to this certificate yet."
+                      : "No graduants match your current filters."
+                    }
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Member No</TableHead>
+                            <TableHead className="text-right">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedEntries.map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell className="font-medium">{entry.name}</TableCell>
+                              <TableCell>{entry.email}</TableCell>
+                              <TableCell>{entry.member_no}</TableCell>
+                              <TableCell className="text-right">
+                                {entry.email_sent ? (
+                                  <Badge variant="default" className="bg-green-500">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    Sent
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <EnhancedPagination
+                      pagination={pagination}
+                      showItemsPerPage={true}
+                      showInfo={true}
+                      itemsPerPageOptions={[5, 10, 20, 50]}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>
