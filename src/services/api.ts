@@ -1,4 +1,5 @@
 import { secureStorage } from '@/utils/secureStorage';
+import { tokenManager } from '@/utils/tokenManager';
 
 const BASE_URL = 'https://detected-carl-polyphonic-steal.trycloudflare.com';
 
@@ -136,7 +137,15 @@ class APIError extends Error {
 
 const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
   const url = `${BASE_URL}${endpoint}`;
-  const token = secureStorage.getAccessToken();
+  
+  // Ensure we have a valid token before making the request
+  const token = await tokenManager.ensureValidToken();
+  
+  if (!token && endpoint !== '/api/auth/login/' && endpoint !== '/api/auth/register/' && endpoint !== '/api/auth/password-reset/' && endpoint !== '/api/auth/password-reset/confirm/') {
+    // No valid token for protected endpoints
+    tokenManager.performSecureLogout();
+    throw new APIError(401, { detail: 'Authentication required' });
+  }
   
   const config: RequestInit = {
     ...options,
@@ -149,14 +158,28 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    
+    // Handle different content types
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
 
     if (!response.ok) {
-      // Handle token refresh for 401 errors
-      if (response.status === 401 && data.code === 'token_not_valid') {
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-          // Retry the original request with new token
+      // Handle authentication errors
+      if (response.status === 401) {
+        // If this was already a retry or if token refresh fails, perform secure logout
+        if (config.headers?.['Authorization']?.includes('Bearer')) {
+          const refreshSuccess = await tokenManager.refreshAccessToken();
+          if (!refreshSuccess) {
+            tokenManager.performSecureLogout();
+            throw new APIError(401, { detail: 'Session expired. Please login again.' });
+          }
+          
+          // Retry the request with the new token
           const newToken = secureStorage.getAccessToken();
           const retryConfig = {
             ...config,
@@ -165,8 +188,15 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise
               Authorization: `Bearer ${newToken}`,
             },
           };
+          
           const retryResponse = await fetch(url, retryConfig);
-          const retryData = await retryResponse.json();
+          let retryData;
+          const retryContentType = retryResponse.headers.get('content-type');
+          if (retryContentType && retryContentType.includes('application/json')) {
+            retryData = await retryResponse.json();
+          } else {
+            retryData = await retryResponse.text();
+          }
           
           if (!retryResponse.ok) {
             throw new APIError(retryResponse.status, retryData);
@@ -174,6 +204,7 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise
           return retryData;
         }
       }
+      
       throw new APIError(response.status, data);
     }
 
@@ -183,32 +214,6 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}): Promise
       throw error;
     }
     throw new Error('Network error occurred');
-  }
-};
-
-const refreshAccessToken = async (): Promise<boolean> => {
-  try {
-    const refresh = secureStorage.getRefreshToken();
-    if (!refresh) return false;
-
-    const response = await fetch(`${BASE_URL}/api/auth/token/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      secureStorage.updateTokens(data.access, refresh);
-      return true;
-    }
-    
-    // If refresh fails, clear storage
-    secureStorage.remove();
-    return false;
-  } catch {
-    secureStorage.remove();
-    return false;
   }
 };
 
@@ -256,7 +261,7 @@ export const authAPI = {
       body: JSON.stringify(data),
     }),
 
-  refreshToken: refreshAccessToken,
+  refreshToken: () => tokenManager.refreshAccessToken(),
 };
 
 export const certificateAPI = {

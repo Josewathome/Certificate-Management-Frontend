@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { secureStorage, StoredAuth } from '@/utils/secureStorage';
+import { tokenManager } from '@/utils/tokenManager';
 import { authAPI, User, LoginRequest, RegisterRequest } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,6 +13,7 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
+  checkAuthStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,16 +36,63 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const storedAuth = secureStorage.get();
       if (storedAuth) {
-        setUser(storedAuth.user);
+        // Validate the stored token
+        const validation = tokenManager.validateToken();
+        if (validation.isValid) {
+          setUser(storedAuth.user);
+        } else if (validation.needsRefresh) {
+          // Try to refresh the token
+          const refreshSuccess = await tokenManager.refreshAccessToken();
+          if (refreshSuccess) {
+            setUser(storedAuth.user);
+          } else {
+            // Refresh failed, clear storage
+            performLogout(false); // Don't show toast on init
+          }
+        } else {
+          // Invalid token, clear storage
+          performLogout(false); // Don't show toast on init
+        }
       }
       setIsLoading(false);
     };
 
     initAuth();
-  }, []);
+
+    // Set up periodic token validation (every 5 minutes)
+    const interval = setInterval(async () => {
+      if (user) {
+        await checkAuthStatus();
+      }
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const checkAuthStatus = async (): Promise<void> => {
+    const validation = tokenManager.validateToken();
+    
+    if (!validation.isValid && !validation.needsRefresh) {
+      // Token is invalid and can't be refreshed
+      performLogout(true);
+      return;
+    }
+    
+    if (validation.needsRefresh) {
+      const refreshSuccess = await tokenManager.refreshAccessToken();
+      if (!refreshSuccess) {
+        performLogout(true);
+        toast({
+          variant: "destructive",
+          title: "Session Expired",
+          description: "Please login again to continue.",
+        });
+      }
+    }
+  };
 
   const login = async (data: LoginRequest): Promise<void> => {
     try {
@@ -108,13 +157,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = (): void => {
-    secureStorage.remove();
+  const performLogout = (showToast: boolean = true): void => {
+    tokenManager.performSecureLogout();
     setUser(null);
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+    
+    if (showToast) {
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+    }
+  };
+
+  const logout = (): void => {
+    performLogout(true);
   };
 
   const updateUser = (updatedUser: User): void => {
@@ -133,6 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     register,
     logout,
     updateUser,
+    checkAuthStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
