@@ -1,6 +1,6 @@
 import { secureStorage } from '@/utils/secureStorage';
 
-const BASE_URL = 'http://127.0.0.1:8000';
+const BASE_URL = 'https://detected-carl-polyphonic-steal.trycloudflare.com';
 
 export interface RegisterRequest {
   username: string;
