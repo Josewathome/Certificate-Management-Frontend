@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -46,27 +47,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { icon: Award, label: 'Create Certificate', path: '/create-certificate' },
     { icon: Users, label: 'Add Graduants', path: '/add-graduants' },
     { icon: Mail, label: 'Send Emails', path: '/send-email' },
-    // Certificate Editor is now a modal picker
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 flex flex-col">
       <Header />
       
-      <div className="flex-1 flex">
+      <div className="flex-1 flex relative">
         {/* Mobile Overlay */}
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-all duration-300"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
 
-        {/* Sidebar Toggle Button - Mobile */}
+        {/* Mobile Toggle Button */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="lg:hidden fixed top-20 left-4 z-50 bg-white shadow-md"
+          className="lg:hidden fixed top-24 left-4 z-50 bg-white/90 backdrop-blur-sm shadow-lg border-white/20 hover:bg-white/95 transition-all duration-200"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
           {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -76,45 +76,56 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <aside
           className={cn(
             "fixed lg:static inset-y-0 left-0 z-40",
-            "transform transition-transform duration-200 ease-in-out",
+            "transition-all duration-300 ease-in-out",
             isSidebarOpen
-              ? "w-64 lg:w-64 translate-x-0 lg:ml-0"
-              : "w-64 lg:w-16 -translate-x-full lg:translate-x-0 lg:ml-0"
-            ,
-            "bg-white border-r border-gray-200 pt-20 lg:pt-4",
-            "shadow-lg lg:shadow-none"
+              ? "w-64 translate-x-0"
+              : "w-64 lg:w-16 -translate-x-full lg:translate-x-0",
+            "bg-white/95 backdrop-blur-xl border-r border-slate-200/60 pt-20 lg:pt-4",
+            "shadow-xl lg:shadow-sm"
           )}
         >
-          {/* Sidebar Toggle Button - Desktop */}
+          {/* Desktop Toggle Button */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="hidden lg:flex absolute -right-3 top-4 bg-white border shadow-sm"
+            className="hidden lg:flex absolute -right-3 top-6 bg-white/90 backdrop-blur-sm border-slate-200/60 shadow-md hover:shadow-lg transition-all duration-200 z-10"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
-            <ChevronRight className={cn("h-4 w-4 transform transition-transform", 
+            <ChevronRight className={cn("h-4 w-4 transition-transform duration-300", 
               isSidebarOpen ? "rotate-180" : ""
             )} />
           </Button>
 
           <div className="h-full flex flex-col">
-            {/* Navigation */}
-            <nav className="flex-1 px-4 py-4 space-y-2">
-              <div className={cn("pb-4 border-b border-gray-200 mb-4", !isSidebarOpen && "lg:px-0 lg:text-center")}> 
-                <h2 className={cn("text-lg font-semibold text-gray-900 transition-all", !isSidebarOpen && "lg:text-xs lg:font-bold lg:tracking-widest lg:overflow-hidden lg:w-0 lg:h-0 lg:p-0 lg:m-0")}>Certificate Manager</h2>
-                <p className={cn("text-sm text-gray-600 transition-all", !isSidebarOpen && "lg:hidden")}>Manage your certificates</p>
+            {/* Navigation Header */}
+            <div className={cn(
+              "px-6 py-6 border-b border-slate-200/60 transition-all duration-300",
+              !isSidebarOpen && "lg:px-3 lg:py-4"
+            )}> 
+              <div className={cn(
+                "transition-all duration-300",
+                !isSidebarOpen && "lg:text-center lg:opacity-0 lg:h-0 lg:overflow-hidden"
+              )}>
+                <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                  Certificate Manager
+                </h2>
+                <p className="text-sm text-slate-600 mt-1">Manage your certificates</p>
               </div>
+            </div>
 
+            {/* Navigation Menu */}
+            <nav className="flex-1 px-4 py-6 space-y-2">
               {navItems.map((item) => (
                 <Button
                   key={item.path}
                   variant={location.pathname === item.path ? "default" : "ghost"}
                   className={cn(
-                    "w-full justify-start transition-colors",
+                    "w-full transition-all duration-200 group",
                     location.pathname === item.path 
-                      ? "bg-primary text-primary-foreground shadow-sm" 
-                      : "hover:bg-gray-100",
-                    !isSidebarOpen && "lg:justify-center"
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30" 
+                      : "hover:bg-slate-100/80 hover:shadow-md text-slate-700 hover:text-slate-900",
+                    isSidebarOpen ? "justify-start px-4" : "lg:justify-center lg:px-2",
+                    "h-12 rounded-xl font-medium"
                   )}
                   onClick={() => {
                     navigate(item.path);
@@ -123,49 +134,78 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     }
                   }}
                 >
-                  <item.icon className="h-4 w-4 mr-3 lg:mr-0" />
-                  <span className={cn("transition-all", !isSidebarOpen && "lg:hidden")}>{item.label}</span>
+                  <item.icon className={cn(
+                    "h-5 w-5 transition-all duration-200",
+                    isSidebarOpen ? "mr-3" : "lg:mr-0",
+                    location.pathname === item.path ? "text-white" : "text-slate-600 group-hover:text-slate-800"
+                  )} />
+                  <span className={cn(
+                    "transition-all duration-300 font-medium",
+                    !isSidebarOpen && "lg:opacity-0 lg:w-0 lg:overflow-hidden"
+                  )}>
+                    {item.label}
+                  </span>
                 </Button>
               ))}
 
               {/* Certificate Editor Modal Trigger */}
               <Button
                 variant="ghost"
-                className={cn("w-full justify-start hover:bg-gray-100", !isSidebarOpen && "lg:justify-center")}
+                className={cn(
+                  "w-full transition-all duration-200 group hover:bg-slate-100/80 hover:shadow-md text-slate-700 hover:text-slate-900",
+                  isSidebarOpen ? "justify-start px-4" : "lg:justify-center lg:px-2",
+                  "h-12 rounded-xl font-medium"
+                )}
                 onClick={() => setShowCertModal(true)}
               >
-                <FileText className="h-4 w-4 mr-3 lg:mr-0" />
-                <span className={cn("transition-all", !isSidebarOpen && "lg:hidden")}>Certificate Editor</span>
+                <FileText className={cn(
+                  "h-5 w-5 transition-all duration-200 text-slate-600 group-hover:text-slate-800",
+                  isSidebarOpen ? "mr-3" : "lg:mr-0"
+                )} />
+                <span className={cn(
+                  "transition-all duration-300 font-medium",
+                  !isSidebarOpen && "lg:opacity-0 lg:w-0 lg:overflow-hidden"
+                )}>
+                  Certificate Editor
+                </span>
               </Button>
 
-              {/* Modal for picking a certificate */}
+              {/* Certificate Selection Modal */}
               {showCertModal && (
                 <Dialog open={showCertModal} onOpenChange={setShowCertModal}>
                   <>
-                    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-                      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                        <h3 className="text-lg font-semibold mb-4">Select a Certificate to Edit</h3>
-                        <ul className="space-y-2 max-h-80 overflow-y-auto">
-                          {certificates.length === 0 && <li className="text-gray-500">No certificates found.</li>}
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
+                        <h3 className="text-xl font-bold text-slate-900 mb-6 text-center">Select Certificate to Edit</h3>
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                          {certificates.length === 0 && (
+                            <div className="text-center py-8">
+                              <FileText className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+                              <p className="text-slate-500 font-medium">No certificates found</p>
+                              <p className="text-sm text-slate-400 mt-1">Create a certificate first</p>
+                            </div>
+                          )}
                           {certificates.map((cert) => (
-                            <li key={cert.id}>
-                              <Button
-                                variant="outline"
-                                className="w-full justify-start"
-                                onClick={() => {
-                                  navigate(`/certificate/${cert.id}/`);
-                                  setShowCertModal(false);
-                                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                                }}
-                              >
-                                {cert.name}
-                              </Button>
-                            </li>
+                            <Button
+                              key={cert.id}
+                              variant="outline"
+                              className="w-full justify-start p-4 h-auto rounded-xl border-slate-200/60 hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 transition-all duration-200"
+                              onClick={() => {
+                                navigate(`/certificate/${cert.id}/`);
+                                setShowCertModal(false);
+                                if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                              }}
+                            >
+                              <div className="text-left">
+                                <div className="font-semibold text-slate-900">{cert.name}</div>
+                                <div className="text-sm text-slate-500 mt-1">Click to edit</div>
+                              </div>
+                            </Button>
                           ))}
-                        </ul>
+                        </div>
                         <Button
                           variant="ghost"
-                          className="mt-4 w-full"
+                          className="mt-6 w-full rounded-xl font-medium hover:bg-slate-100/80"
                           onClick={() => setShowCertModal(false)}
                         >
                           Cancel
@@ -178,19 +218,39 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </nav>
 
             {/* Quick Actions */}
-            <div className="px-4 py-4 border-t border-gray-200">
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className={cn(
+              "px-4 py-6 border-t border-slate-200/60 transition-all duration-300",
+              !isSidebarOpen && "lg:px-2"
+            )}>
+              <div className={cn(
+                "transition-all duration-300",
+                !isSidebarOpen && "lg:text-center"
+              )}>
+                <p className={cn(
+                  "text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 transition-all duration-300",
+                  !isSidebarOpen && "lg:opacity-0 lg:h-0 lg:overflow-hidden lg:mb-0"
+                )}>
                   Quick Actions
                 </p>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start"
+                  className={cn(
+                    "w-full transition-all duration-200 border-slate-200/60 hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 rounded-xl font-medium",
+                    isSidebarOpen ? "justify-start h-10" : "lg:justify-center lg:h-10 lg:px-2"
+                  )}
                   onClick={() => navigate('/create-certificate')}
                 >
-                  <Plus className="h-3 w-3 mr-2" />
-                  New Certificate
+                  <Plus className={cn(
+                    "h-4 w-4 text-primary transition-all duration-200",
+                    isSidebarOpen ? "mr-2" : "lg:mr-0"
+                  )} />
+                  <span className={cn(
+                    "transition-all duration-300",
+                    !isSidebarOpen && "lg:opacity-0 lg:w-0 lg:overflow-hidden"
+                  )}>
+                    New Certificate
+                  </span>
                 </Button>
               </div>
             </div>
@@ -199,12 +259,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Main Content */}
         <main className={cn(
-          "flex-1 transition-all duration-200",
-          "p-4 lg:p-8",
-          isSidebarOpen ? "lg:ml-64" : "lg:ml-16"
+          "flex-1 transition-all duration-300 ease-in-out",
+          "p-6 lg:p-8",
+          // Smooth margin transition based on sidebar state
+          isSidebarOpen ? "lg:ml-64" : "lg:ml-16",
+          // Ensure proper spacing on mobile
+          "pt-20 lg:pt-6"
         )}>
           <div className="max-w-7xl mx-auto">
-            {children}
+            <div className="animate-fade-in">
+              {children}
+            </div>
           </div>
         </main>
       </div>
