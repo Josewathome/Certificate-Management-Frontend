@@ -77,9 +77,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           className={cn(
             "fixed lg:static inset-y-0 left-0 z-40",
             "transition-all duration-300 ease-in-out",
+            // Mobile behavior
             isSidebarOpen
               ? "w-64 translate-x-0"
-              : "w-64 lg:w-16 -translate-x-full lg:translate-x-0",
+              : "w-64 -translate-x-full lg:translate-x-0",
+            // Desktop behavior - smooth width transition
+            "lg:transition-[width] lg:duration-300 lg:ease-in-out",
+            isSidebarOpen ? "lg:w-64" : "lg:w-16",
             "bg-white/95 backdrop-blur-xl border-r border-slate-200/60 pt-20 lg:pt-4",
             "shadow-xl lg:shadow-sm"
           )}
@@ -96,7 +100,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             )} />
           </Button>
 
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col overflow-hidden">
             {/* Navigation Header */}
             <div className={cn(
               "px-6 py-6 border-b border-slate-200/60 transition-all duration-300",
@@ -261,7 +265,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <main className={cn(
           "flex-1 transition-all duration-300 ease-in-out",
           "p-6 lg:p-8",
-          // Smooth margin transition based on sidebar state
+          // Smooth margin transition for desktop - this is the key fix
+          "lg:transition-[margin] lg:duration-300 lg:ease-in-out",
           isSidebarOpen ? "lg:ml-64" : "lg:ml-16",
           // Ensure proper spacing on mobile
           "pt-20 lg:pt-6"
