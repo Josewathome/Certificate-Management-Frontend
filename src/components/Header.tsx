@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, User } from 'lucide-react';
 
 const BASE_URL = 'http://127.0.0.1:8000';
 
@@ -12,44 +13,60 @@ const Header = () => {
 
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return '';
-    // If it's already a full URL, return as is
     if (imagePath.startsWith('http')) return imagePath;
-    // Otherwise, append to base URL
     return `${BASE_URL}${imagePath}`;
   };
 
   return (
-    <header className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white/80 backdrop-blur-lg shadow-professional-sm border-b border-border/50 sticky top-0 z-50">
+      <div className="container-enhanced">
+        <div className="flex justify-between items-center h-20">
+          {/* Logo Section */}
           <div className="flex items-center">
-            <Link to="/">
-            <img 
-              src="/lovable-uploads/29663671-8ba1-491f-9e2b-22ba42288eb9.png" 
-              alt="Scratch & Script Logo" 
-              className="h-10 mr-3"
-            />
+            <Link to="/" className="flex items-center space-x-3 group">
+              <img 
+                src="/lovable-uploads/29663671-8ba1-491f-9e2b-22ba42288eb9.png" 
+                alt="Scratch & Script Logo" 
+                className="h-12 logo-animation"
+              />
+              <div className="hidden md:block">
+                <h1 className="text-xl font-bold gradient-text">Scratch & Script</h1>
+                <p className="text-xs text-muted-foreground">Certificate Management</p>
+              </div>
             </Link>
-            { /* <h1 className="text-xl font-bold text-gray-900">Scratch & Script</h1> */}
           </div>
           
+          {/* Navigation Actions */}
           <div className="flex items-center space-x-4">
             <Link to="/profile">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" className="rounded-xl h-12 px-4 hover:bg-muted/50 transition-all duration-300">
                 <Settings className="h-4 w-4 mr-2" />
-                Profile
+                <span className="hidden sm:inline">Profile</span>
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={logout}>
+            
+            <Button 
+              variant="ghost" 
+              className="rounded-xl h-12 px-4 hover:bg-destructive/10 hover:text-destructive transition-all duration-300" 
+              onClick={logout}
+            >
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              <span className="hidden sm:inline">Logout</span>
             </Button>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={getImageUrl(user?.profile_image || '')} alt={user?.name} />
-              <AvatarFallback>
-                {user?.name.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
+
+            {/* Enhanced User Avatar */}
+            <div className="flex items-center space-x-3 pl-4 border-l border-border/50">
+              <Avatar className="h-10 w-10 ring-2 ring-primary/20 hover:ring-primary/40 transition-all duration-300">
+                <AvatarImage src={getImageUrl(user?.profile_image || '')} alt={user?.name} />
+                <AvatarFallback className="bg-gradient-primary text-white font-semibold">
+                  {user?.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden lg:block">
+                <p className="text-sm font-semibold text-foreground">{user?.name}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
