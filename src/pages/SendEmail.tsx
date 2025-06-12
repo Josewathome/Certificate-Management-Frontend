@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -187,8 +186,11 @@ const SendEmail = () => {
     }
   };
 
-  const pendingEmails = entries.filter(entry => !entry.email_sent).length;
+  // Only count emails to send for entries with certificate_create === true and email_sent === false
+  const pendingEmails = entries.filter(entry => !entry.email_sent && entry.certificate_create).length;
   const sentEmails = entries.filter(entry => entry.email_sent).length;
+  const pendingCertificates = entries.filter(entry => !entry.certificate_create).length;
+  const createdCertificates = entries.filter(entry => entry.certificate_create).length;
 
   // Get paginated entries
   const paginatedEntries = filteredEntries.slice(
@@ -261,7 +263,7 @@ const SendEmail = () => {
                     ) : (
                       <>
                         <FileCheck className="h-4 w-4 mr-2" />
-                        Generate Certificates
+                        Generate Certificates ({pendingCertificates} pending)
                       </>
                     )}
                   </Button>
@@ -305,7 +307,9 @@ const SendEmail = () => {
               <AlertDescription className="flex flex-wrap gap-4 mt-2">
                 <Badge variant="outline">{entries.length} total graduants</Badge>
                 <Badge variant="default" className="bg-green-500">{sentEmails} emails sent</Badge>
-                <Badge variant="secondary">{pendingEmails} pending</Badge>
+                <Badge variant="secondary">{pendingEmails} emails pending (certificate created)</Badge>
+                <Badge variant="default" className="bg-blue-500">{createdCertificates} certificates created</Badge>
+                <Badge variant="secondary">{pendingCertificates} certificates pending</Badge>
               </AlertDescription>
             </Alert>
 
@@ -372,6 +376,7 @@ const SendEmail = () => {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Member No</TableHead>
+                            <TableHead>Certificate</TableHead>
                             <TableHead className="text-right">Status</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -381,6 +386,19 @@ const SendEmail = () => {
                               <TableCell className="font-medium">{entry.name}</TableCell>
                               <TableCell>{entry.email}</TableCell>
                               <TableCell>{entry.member_no}</TableCell>
+                              <TableCell>
+                                {entry.certificate_create ? (
+                                  <Badge variant="default" className="bg-blue-500">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    Created
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                )}
+                              </TableCell>
                               <TableCell className="text-right">
                                 {entry.email_sent ? (
                                   <Badge variant="default" className="bg-green-500">

@@ -1,16 +1,17 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { secureStorage, StoredAuth } from '@/utils/secureStorage';
 import { tokenManager } from '@/utils/tokenManager';
 import { authAPI, User, LoginRequest, RegisterRequest } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { triggerLogout } from '@/utils/logout';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  register: (data: RegisterRequest | FormData) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
   checkAuthStatus: () => Promise<void>;
@@ -34,41 +35,51 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const location = useLocation();
+  const publicRoutes = ['/login', '/register', '/password-reset']; // Add other public routes as needed
 
   useEffect(() => {
     const initAuth = async () => {
       const storedAuth = secureStorage.get();
+      let hasValidSession = false;
+
       if (storedAuth) {
-        // Validate the stored token
         const validation = tokenManager.validateToken();
         if (validation.isValid) {
           setUser(storedAuth.user);
+          hasValidSession = true;
         } else if (validation.needsRefresh) {
-          // Try to refresh the token
           const refreshSuccess = await tokenManager.refreshAccessToken();
           if (refreshSuccess) {
             setUser(storedAuth.user);
+            hasValidSession = true;
           } else {
-            // Refresh failed, clear storage
-            performLogout(false); // Don't show toast on init
+            performLogout(false);
           }
         } else {
-          // Invalid token, clear storage
-          performLogout(false); // Don't show toast on init
+          performLogout(false);
         }
       }
+
+      // Only redirect to login if no valid session AND not on public route
+      if (!hasValidSession && !publicRoutes.includes(location.pathname)) {
+        navigate('/login', { replace: true });
+      }
+
       setIsLoading(false);
     };
 
     initAuth();
+  }, [navigate, location.pathname]);
 
-    // Set up periodic token validation (every 5 minutes)
+  // Periodic token validation, only when user is logged in
+  useEffect(() => {
+    if (!user) return;
     const interval = setInterval(async () => {
-      if (user) {
-        await checkAuthStatus();
-      }
+      await checkAuthStatus();
     }, 5 * 60 * 1000);
-
     return () => clearInterval(interval);
   }, [user]);
 
@@ -130,11 +141,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const register = async (data: RegisterRequest): Promise<void> => {
+  const register = async (data: RegisterRequest | FormData): Promise<void> => {
     try {
       setIsLoading(true);
-      await authAPI.register(data);
-      
+      if (data instanceof FormData) {
+        await authAPI.registerWithFormData(data);
+      } else {
+        await authAPI.register(data);
+      }
       toast({
         title: "Registration Successful!",
         description: "Please check your email to verify your account.",
@@ -158,9 +172,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const performLogout = (showToast: boolean = true): void => {
+    console.log('performLogout called');
     tokenManager.performSecureLogout();
     setUser(null);
-    
+    triggerLogout();
     if (showToast) {
       toast({
         title: "Logged Out",

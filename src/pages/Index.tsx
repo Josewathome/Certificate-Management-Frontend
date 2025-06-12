@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, Settings, LogOut, Award, Users, Mail } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CertificateEditor from './CertificateEditor';
+import { Route } from 'react-router-dom';
 
 const Index = () => {
   const { user, logout, isAuthenticated } = useAuth();

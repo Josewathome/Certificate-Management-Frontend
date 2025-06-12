@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,19 +11,32 @@ const Register = () => {
   const navigate = useNavigate();
   const { register, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     name: '',
     phone_number: '',
     password: '',
-    profile_image: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await register(formData);
+      // Create FormData object for multipart upload
+      const formDataToSend = new FormData();
+      
+      // Append all text fields
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value);
+      });
+      
+      // Append profile image only if exists
+      if (profileImageFile) {
+        formDataToSend.append('profile_image', profileImageFile);
+      }
+
+      await register(formDataToSend);
       navigate('/login');
     } catch (error) {
       // Error handling is done in the auth context
@@ -40,16 +52,7 @@ const Register = () => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({
-          ...formData,
-          profile_image: reader.result as string,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+    setProfileImageFile(file || null);
   };
 
   return (

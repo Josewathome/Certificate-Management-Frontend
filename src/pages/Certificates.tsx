@@ -42,6 +42,7 @@ const Certificates = () => {
         });
         loadCertificates();
       } catch (error) {
+        // Handle actual errors
         toast({
           title: "Error",
           description: "Failed to delete certificate. Please try again.",

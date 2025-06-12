@@ -28,6 +28,19 @@ import DashboardLayout from '@/components/DashboardLayout';
 
 const ENTRIES_PER_PAGE = 10;
 
+function downloadGraduantTemplate() {
+  const csvContent = 'member_no,name,email\n';
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'template.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 const AddGraduants = () => {
   const { toast } = useToast();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -340,7 +353,7 @@ const AddGraduants = () => {
                   accept=".csv,.xlsx,.xls,.json"
                   onChange={handleFileUpload}
                 />
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={downloadGraduantTemplate} type="button">
                   <Download className="h-4 w-4 mr-2" />
                   Download Template
                 </Button>

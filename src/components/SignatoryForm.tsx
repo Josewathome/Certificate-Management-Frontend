@@ -15,7 +15,7 @@ interface SignatoryFormProps {
 
 export const SignatoryForm: React.FC<SignatoryFormProps> = ({
   certificateId,
-  existingSignatories,
+  existingSignatories = [],
   onSignatoryChange,
 }) => {
   const { toast } = useToast();

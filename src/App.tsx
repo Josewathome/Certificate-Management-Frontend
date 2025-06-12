@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,8 @@ import SendEmail from "./pages/SendEmail";
 import PasswordReset from "./pages/PasswordReset";
 import NotFound from "./pages/NotFound";
 import Dashboard from '@/pages/Dashboard';
+import LogoutHandler from '@/components/LogoutHandler';
+import CertificateEditor from './pages/CertificateEditor';
 
 const queryClient = new QueryClient();
 
@@ -27,8 +28,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthErrorBoundary>
-        <AuthProvider>
-          <Router>
+        <Router>
+          <AuthProvider>
+            <LogoutHandler />
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/login" element={<Login />} />
@@ -90,10 +92,19 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/certificate/:certificate_id/" 
+                element={
+                  <ProtectedRoute>
+                    <CertificateEditor />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
+              
             </Routes>
-          </Router>
-        </AuthProvider>
+          </AuthProvider>
+        </Router>
       </AuthErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>

@@ -1,7 +1,7 @@
 import { secureStorage } from '@/utils/secureStorage';
 import { tokenManager } from '@/utils/tokenManager';
 
-const BASE_URL = 'https://detected-carl-polyphonic-steal.trycloudflare.com';
+export const BASE_URL = 'http://127.0.0.1:8000';
 
 export interface RegisterRequest {
   username: string;
@@ -111,6 +111,7 @@ export interface CertificateEntry {
   email: string;
   member_no: string;
   email_sent: boolean;
+  certificate_create: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -243,6 +244,13 @@ export const authAPI = {
       body: formData,
     }),
 
+  registerWithFormData: (formData: FormData) =>
+    makeRequest('/api/auth/register/', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type
+    }),
+
   changePassword: (data: ChangePasswordRequest) =>
     makeRequest('/api/auth/change-password/', {
       method: 'POST',
@@ -281,22 +289,41 @@ export const certificateAPI = {
 
   update: (id: string, data: Partial<CertificateRequest>): Promise<Certificate> => {
     const formData = new FormData();
+  
+    // Add dynamic data
     Object.entries(data).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
         formData.append(key, value);
       }
     });
-
-    return makeRequest(`/api/auth/certificates/${id}/`, {
+  
+    // Explicitly include certificate_id in the form body
+    formData.append('id', id);
+  
+    return makeRequest(`/api/auth/certificates/`, {
       method: 'PATCH',
       body: formData,
     });
   },
 
-  delete: (id: string): Promise<void> =>
-    makeRequest(`/api/auth/certificates/${id}/`, {
+
+  // api.ts
+  delete: (id: string): Promise<void> => {
+    const formData = new FormData();
+    formData.append('id', id);
+    
+    return makeRequest(`/api/auth/certificates/${id}/`, {
       method: 'DELETE',
-    }),
+      body: formData,
+    }).then(response => {
+      // Explicitly handle 204 responses
+      if (response.status === 200) {
+        return;
+      }
+      return response.json();
+    });
+  },
+  
 
   getAll: (): Promise<Certificate[]> =>
     makeRequest('/api/auth/certificates/', {
@@ -353,8 +380,9 @@ export const profileAPI = {
     }),
 
   deleteCertificate: (id: string): Promise<void> =>
-    makeRequest(`/api/auth/certificates/${id}/`, {
+    makeRequest(`/api/auth/certificates/`, {
       method: 'DELETE',
+      body: JSON.stringify({ id }),
     }),
 };
 
@@ -418,4 +446,19 @@ export const certificateGenerationAPI = {
       method: 'POST',
       body: JSON.stringify({ certificate_id: certificateId }),
     }),
+};
+
+// Certificate Template Editor APIs
+export const getCertificate = async (certificateId: string) => {
+  return makeRequest(`/certificate/${certificateId}/`, {
+    method: 'GET',
+  });
+};
+
+export const updateCertificateTemplate = async (certificateId: string, template_html: string) => {
+  return makeRequest(`/certificate/${certificateId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ template_html }),
+    headers: { 'Content-Type': 'application/json' },
+  });
 };
