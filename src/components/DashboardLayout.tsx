@@ -81,8 +81,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             isSidebarOpen
               ? "w-64 translate-x-0"
               : "w-64 -translate-x-full lg:translate-x-0",
-            // Desktop behavior - smooth width transition
-            "lg:transition-[width] lg:duration-300 lg:ease-in-out",
+            // Desktop behavior - ensure proper width transitions
             isSidebarOpen ? "lg:w-64" : "lg:w-16",
             "bg-white/95 backdrop-blur-xl border-r border-slate-200/60 pt-20 lg:pt-4",
             "shadow-xl lg:shadow-sm"
@@ -262,15 +261,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </aside>
 
         {/* Main Content */}
-        <main className={cn(
-          "flex-1 transition-all duration-300 ease-in-out",
-          "p-6 lg:p-8",
-          // Smooth margin transition for desktop - this is the key fix
-          "lg:transition-[margin] lg:duration-300 lg:ease-in-out",
-          isSidebarOpen ? "lg:ml-64" : "lg:ml-16",
-          // Ensure proper spacing on mobile
-          "pt-20 lg:pt-6"
-        )}>
+        <main 
+          className={cn(
+            "flex-1 transition-all duration-300 ease-in-out p-6 lg:p-8 pt-20 lg:pt-6",
+            // Desktop: adjust margin based on sidebar state
+            "lg:ml-0",
+            // Static positioning on desktop when sidebar is present
+            isSidebarOpen && "lg:ml-64",
+            !isSidebarOpen && "lg:ml-16"
+          )}
+        >
           <div className="max-w-7xl mx-auto">
             <div className="animate-fade-in">
               {children}
