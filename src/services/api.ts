@@ -1,7 +1,7 @@
 import { secureStorage } from '@/utils/secureStorage';
 import { tokenManager } from '@/utils/tokenManager';
 
-export const BASE_URL = 'https://arm-maine-intervention-tribe.trycloudflare.com';
+export const BASE_URL = 'http://127.0.0.1:8000';
 
 export interface RegisterRequest {
   username: string;

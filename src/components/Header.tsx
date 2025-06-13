@@ -1,12 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Settings, LogOut, User } from 'lucide-react';
-
-const BASE_URL = 'http://127.0.0.1:8000';
+import { BASE_URL } from '@/services/api';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -45,14 +43,14 @@ const Header = () => {
               </Button>
             </Link>
             
-            <Button 
+            {/*  <Button 
               variant="ghost" 
               className="rounded-xl h-12 px-4 hover:bg-destructive/10 hover:text-destructive transition-all duration-300" 
               onClick={logout}
             >
               <LogOut className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Logout</span>
-            </Button>
+            </Button> */}
 
             {/* Enhanced User Avatar */}
             <div className="flex items-center space-x-3 pl-4 border-l border-border/50">

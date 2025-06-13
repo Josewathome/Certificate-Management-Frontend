@@ -39,11 +39,19 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Enhanced Header */}
         <div className="text-center mb-8 fade-in">
+        <div className="flex items-center space-x-4">
           <img 
             src="/lovable-uploads/29663671-8ba1-491f-9e2b-22ba42288eb9.png" 
             alt="Scratch & Script Logo" 
-            className="h-24 mx-auto mb-6 logo-animation"
+            className="h-24 logo-animation"
           />
+          <div>
+            <h1 className="text-xl font-bold text-white">Scratch & Script</h1>
+            <p className="text-white/80 text-lg">Certificate Management</p>
+          </div>
+        </div>
+
+
           <h1 className="text-4xl font-bold text-white mb-3 font-serif">Welcome Back</h1>
           <p className="text-white/80 text-lg">Sign in to your professional dashboard</p>
           
@@ -60,9 +68,6 @@ const Login = () => {
         <Card className="shadow-professional-xl border-0 backdrop-blur-sm bg-white/95 slide-up rounded-2xl">
           <CardHeader className="space-y-2 pb-6">
             <CardTitle className="text-2xl font-bold text-center text-foreground">Sign In</CardTitle>
-            <CardDescription className="text-center text-muted-foreground text-base">
-              Enter your credentials to access your account
-            </CardDescription>
           </CardHeader>
           
           <form onSubmit={handleSubmit} className="form-enhanced">
