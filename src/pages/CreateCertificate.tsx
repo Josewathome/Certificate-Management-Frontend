@@ -185,7 +185,7 @@ const CreateCertificate = () => {
 
   const handleEditTemplate = () => {
     if (createdCertificate) {
-      navigate(`/certificate-editor/${createdCertificate.id}`);
+      navigate(`/certificate/${createdCertificate.id}/`);
     }
   };
 
