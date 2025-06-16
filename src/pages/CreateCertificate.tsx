@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Award, Save, X } from 'lucide-react';
+import { Award, Save, X, Edit, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -31,6 +31,7 @@ const CreateCertificate = () => {
     expiry_date: '',
   });
   const [templateApplied, setTemplateApplied] = useState(false);
+  const [appliedTemplate, setAppliedTemplate] = useState<CertificateTemplate | null>(null);
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>(undefined);
@@ -172,9 +173,27 @@ const CreateCertificate = () => {
       await applyTemplateToCertificate(selectedTemplate.id, createdCertificate.id);
       setShowPreview(false);
       setTemplateApplied(true);
+      setAppliedTemplate(selectedTemplate);
+      toast({
+        title: "Template Applied",
+        description: `${selectedTemplate.name} template has been applied to your certificate.`,
+      });
     } finally {
       setApplying(false);
     }
+  };
+
+  const handleEditTemplate = () => {
+    if (createdCertificate) {
+      navigate(`/certificate-editor/${createdCertificate.id}`);
+    }
+  };
+
+  const resetTemplate = () => {
+    setTemplateApplied(false);
+    setAppliedTemplate(null);
+    setSelectedTemplate(null);
+    setSelectedTemplateId(undefined);
   };
 
   return (
@@ -298,6 +317,48 @@ const CreateCertificate = () => {
           </form>
         </CardContent>
       </Card>
+
+      {createdCertificate && templateApplied && appliedTemplate && (
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Template Applied
+              </CardTitle>
+              <CardDescription>Current template configuration for your certificate</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                <div>
+                  <p className="font-medium text-green-800">Template: {appliedTemplate.name}</p>
+                  <p className="text-sm text-green-600 mt-1">Template has been successfully applied to your certificate</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetTemplate}
+                    className="flex items-center gap-2"
+                  >
+                    <Palette className="h-4 w-4" />
+                    Change Template
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleEditTemplate}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Template
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {createdCertificate && !templateApplied && (
         <div className="mt-8">
