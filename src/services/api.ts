@@ -462,3 +462,33 @@ export const updateCertificateTemplate = async (certificateId: string, template_
     headers: { 'Content-Type': 'application/json' },
   });
 };
+
+// Template APIs
+export interface CertificateTemplate {
+  id: number;
+  name: string;
+  template_html?: string;
+}
+
+// Fetch all templates
+export const fetchTemplates = async (): Promise<CertificateTemplate[]> => {
+  return makeRequest('/api/auth/templates/', {
+    method: 'GET',
+  });
+};
+
+// Fetch template by id
+export const fetchTemplateById = async (id: number): Promise<CertificateTemplate> => {
+  return makeRequest(`/api/auth/templates/?id=${id}`, {
+    method: 'GET',
+  });
+};
+
+// Apply template to certificate
+export const applyTemplateToCertificate = async (template_id: number, certificate_id: string): Promise<any> => {
+  return makeRequest('/api/auth/templates/', {
+    method: 'PATCH',
+    body: JSON.stringify({ template_id, certificate_id }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+};

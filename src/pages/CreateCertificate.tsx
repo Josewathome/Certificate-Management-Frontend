@@ -12,6 +12,9 @@ import { certificateAPI, profileAPI, type CertificateRequest, type Certificate }
 import { SignatoryForm } from '@/components/SignatoryForm';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { fetchTemplates, fetchTemplateById, applyTemplateToCertificate, CertificateTemplate } from '@/services/api';
 
 const CreateCertificate = () => {
   const { toast } = useToast();
@@ -27,6 +30,14 @@ const CreateCertificate = () => {
     issued_date: new Date().toISOString().split('T')[0],
     expiry_date: '',
   });
+  const [templateApplied, setTemplateApplied] = useState(false);
+  const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>(undefined);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [dropdownLoading, setDropdownLoading] = useState(false);
 
   useEffect(() => {
     const loadCertificate = async () => {
@@ -59,6 +70,10 @@ const CreateCertificate = () => {
 
     loadCertificate();
   }, [id]);
+
+  useEffect(() => {
+    fetchTemplates().then(setTemplates).catch(() => {/* ignore */});
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setCertificateData({
@@ -131,6 +146,34 @@ const CreateCertificate = () => {
         description: `Failed to ${id ? 'update' : 'create'} certificate. Please try again.`,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDropdownSelect = async (value: string) => {
+    setDropdownLoading(true);
+    setSelectedTemplateId(value);
+    try {
+      const template = templates.find(t => t.id.toString() === value);
+      if (template) {
+        const data = await fetchTemplateById(template.id);
+        setSelectedTemplate(template);
+        setPreviewHtml(data.template_html || '');
+        setShowPreview(true);
+      }
+    } finally {
+      setDropdownLoading(false);
+    }
+  };
+
+  const handleApplyTemplate = async () => {
+    if (!selectedTemplate || !createdCertificate) return;
+    setApplying(true);
+    try {
+      await applyTemplateToCertificate(selectedTemplate.id, createdCertificate.id);
+      setShowPreview(false);
+      setTemplateApplied(true);
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -250,7 +293,47 @@ const CreateCertificate = () => {
         </CardContent>
       </Card>
 
-      {createdCertificate && (
+      {createdCertificate && !templateApplied && (
+        <div className="mt-8 flex flex-col items-start">
+          <label className="mb-2 text-sm font-medium">Select a Certificate Template</label>
+          <Select
+            value={selectedTemplateId}
+            onValueChange={handleDropdownSelect}
+            disabled={dropdownLoading}
+          >
+            <SelectTrigger className="h-10 px-4 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all duration-200 text-sm font-medium w-[220px]">
+              {dropdownLoading
+                ? 'Loading...'
+                : selectedTemplate
+                  ? selectedTemplate.name
+                  : 'Choose Template'}
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map(t => (
+                <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Preview: {selectedTemplate?.name}</DialogTitle>
+              </DialogHeader>
+              <div className="border rounded p-4 bg-white min-h-[300px] max-h-[60vh] overflow-auto">
+                <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowPreview(false)} disabled={applying}>Cancel</Button>
+                <Button onClick={handleApplyTemplate} disabled={applying}>
+                  {applying ? 'Applying...' : 'Apply Template'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
+      {createdCertificate && templateApplied && (
         <SignatoryForm
           certificateId={createdCertificate.id}
           existingSignatories={createdCertificate.signatories}

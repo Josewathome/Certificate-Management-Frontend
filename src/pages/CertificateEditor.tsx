@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { getCertificate, updateCertificateTemplate, BASE_URL } from '@/services/api';
+import { getCertificate, updateCertificateTemplate, BASE_URL, fetchTemplates, fetchTemplateById, applyTemplateToCertificate, CertificateTemplate } from '@/services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +8,8 @@ import { Edit2, Eye, Save, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import nunjucks from 'nunjucks';
 import DashboardLayout from '@/components/DashboardLayout';
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 // Configure Nunjucks (no templates directory needed for client-side)
 nunjucks.configure({ autoescape: false });
@@ -182,6 +184,12 @@ const CertificateEditor: React.FC = () => {
   const [certificate, setCertificate] = useState<any>(null);
   const [editValue, setEditValue] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
+  const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [dropdownLoading, setDropdownLoading] = useState(false);
 
   // Get available placeholders for the current certificate
   const availablePlaceholders = certificate ? getAvailablePlaceholders(certificate) : [];
@@ -216,6 +224,10 @@ const CertificateEditor: React.FC = () => {
   useEffect(() => {
     fetchCertificate();
   }, [fetchCertificate]);
+
+  useEffect(() => {
+    fetchTemplates().then(setTemplates).catch(() => {/* ignore */});
+  }, []);
 
   // Save draft to localStorage on edit with debounce
   useEffect(() => {
@@ -259,6 +271,33 @@ const CertificateEditor: React.FC = () => {
     localStorage.removeItem(LOCAL_STORAGE_KEY(certificate_id));
     setEditValue(certificate.template_html || '');
     setHasDraft(false);
+  };
+
+  const handleDropdownSelect = async (value: string) => {
+    setDropdownLoading(true);
+    try {
+      const template = templates.find(t => t.id.toString() === value);
+      if (template) {
+        const data = await fetchTemplateById(template.id);
+        setSelectedTemplate(template);
+        setPreviewHtml(data.template_html || '');
+        setShowPreview(true);
+      }
+    } finally {
+      setDropdownLoading(false);
+    }
+  };
+
+  const handleApplyTemplate = async () => {
+    if (!selectedTemplate || !certificate_id) return;
+    setApplying(true);
+    try {
+      await applyTemplateToCertificate(selectedTemplate.id, certificate_id);
+      setShowPreview(false);
+      fetchCertificate();
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (loading) return (
@@ -321,7 +360,7 @@ const CertificateEditor: React.FC = () => {
             )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 items-center">
                 <TabsTrigger value="edit" className="flex items-center gap-2">
                   <Edit2 className="h-4 w-4" />
                   Edit Template (Django/Jinja-style)
@@ -330,6 +369,18 @@ const CertificateEditor: React.FC = () => {
                   <Eye className="h-4 w-4" />
                   Preview
                 </TabsTrigger>
+                <div className="ml-2 flex items-center">
+                  <Select onValueChange={handleDropdownSelect} disabled={dropdownLoading}>
+                    <SelectTrigger className="h-10 px-4 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all duration-200 text-sm font-medium w-[180px]">
+                      {dropdownLoading ? 'Loading...' : 'Re-select Template'}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(t => (
+                        <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </TabsList>
 
               <TabsContent value="edit" className="space-y-4">
@@ -388,6 +439,25 @@ const CertificateEditor: React.FC = () => {
                 </div>
               </TabsContent>
             </Tabs>
+
+            {showPreview && (
+              <Dialog open={showPreview} onOpenChange={setShowPreview}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Preview: {selectedTemplate?.name}</DialogTitle>
+                  </DialogHeader>
+                  <div className="border rounded p-4 bg-white min-h-[300px] max-h-[60vh] overflow-auto">
+                    <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowPreview(false)} disabled={applying}>Cancel</Button>
+                    <Button onClick={handleApplyTemplate} disabled={applying}>
+                      {applying ? 'Applying...' : 'Apply Template'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </CardContent>
         </Card>
       </div>
