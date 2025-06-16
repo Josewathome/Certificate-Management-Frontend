@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Award, Save } from 'lucide-react';
+import { Award, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -280,12 +280,18 @@ const CreateCertificate = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <Button type="submit" className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button type="submit" className="flex-1 sm:flex-none sm:min-w-[200px]">
                 <Save className="h-4 w-4 mr-2" />
                 {id ? 'Update Certificate' : 'Create Certificate'}
               </Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/')}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => navigate('/')}
+                className="flex-1 sm:flex-none sm:min-w-[120px]"
+              >
+                <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
             </div>
@@ -294,26 +300,39 @@ const CreateCertificate = () => {
       </Card>
 
       {createdCertificate && !templateApplied && (
-        <div className="mt-8 flex flex-col items-start">
-          <label className="mb-2 text-sm font-medium">Select a Certificate Template</label>
-          <Select
-            value={selectedTemplateId}
-            onValueChange={handleDropdownSelect}
-            disabled={dropdownLoading}
-          >
-            <SelectTrigger className="h-10 px-4 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all duration-200 text-sm font-medium w-[220px]">
-              {dropdownLoading
-                ? 'Loading...'
-                : selectedTemplate
-                  ? selectedTemplate.name
-                  : 'Choose Template'}
-            </SelectTrigger>
-            <SelectContent>
-              {templates.map(t => (
-                <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Select Template</CardTitle>
+              <CardDescription>Choose a template to apply to your certificate</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <Label className="text-sm font-medium whitespace-nowrap">Certificate Template:</Label>
+                  <Select
+                    value={selectedTemplateId}
+                    onValueChange={handleDropdownSelect}
+                    disabled={dropdownLoading}
+                  >
+                    <SelectTrigger className="w-full sm:w-[280px]">
+                      {dropdownLoading
+                        ? 'Loading...'
+                        : selectedTemplate
+                          ? selectedTemplate.name
+                          : 'Choose Template'}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(t => (
+                        <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           <Dialog open={showPreview} onOpenChange={setShowPreview}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
@@ -322,9 +341,11 @@ const CreateCertificate = () => {
               <div className="border rounded p-4 bg-white min-h-[300px] max-h-[60vh] overflow-auto">
                 <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowPreview(false)} disabled={applying}>Cancel</Button>
-                <Button onClick={handleApplyTemplate} disabled={applying}>
+              <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setShowPreview(false)} disabled={applying} className="w-full sm:w-auto">
+                  Cancel
+                </Button>
+                <Button onClick={handleApplyTemplate} disabled={applying} className="w-full sm:w-auto">
                   {applying ? 'Applying...' : 'Apply Template'}
                 </Button>
               </DialogFooter>
@@ -334,11 +355,13 @@ const CreateCertificate = () => {
       )}
 
       {createdCertificate && templateApplied && (
-        <SignatoryForm
-          certificateId={createdCertificate.id}
-          existingSignatories={createdCertificate.signatories}
-          onSignatoryChange={refreshCertificate}
-        />
+        <div className="mt-8">
+          <SignatoryForm
+            certificateId={createdCertificate.id}
+            existingSignatories={createdCertificate.signatories}
+            onSignatoryChange={refreshCertificate}
+          />
+        </div>
       )}
     </DashboardLayout>
   );
