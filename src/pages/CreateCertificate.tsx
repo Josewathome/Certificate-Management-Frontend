@@ -12,7 +12,7 @@ import { certificateAPI, profileAPI, type CertificateRequest, type Certificate }
 import { SignatoryForm } from '@/components/SignatoryForm';
 import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { fetchTemplates, fetchTemplateById, applyTemplateToCertificate, CertificateTemplate } from '@/services/api';
 
@@ -34,6 +34,7 @@ const CreateCertificate = () => {
   const [appliedTemplate, setAppliedTemplate] = useState<CertificateTemplate | null>(null);
   const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>(undefined);
   const [previewHtml, setPreviewHtml] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -151,6 +152,7 @@ const CreateCertificate = () => {
 
   const handleDropdownSelect = async (value: string) => {
     setDropdownLoading(true);
+    setSelectedTemplateId(value);
     try {
       const template = templates.find(t => t.id.toString() === value);
       if (template) {
@@ -191,6 +193,7 @@ const CreateCertificate = () => {
     setTemplateApplied(false);
     setAppliedTemplate(null);
     setSelectedTemplate(null);
+    setSelectedTemplateId(undefined);
   };
 
   return (
@@ -360,24 +363,35 @@ const CreateCertificate = () => {
       {createdCertificate && !templateApplied && (
         <div className="mt-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="text-lg">Select Template</CardTitle>
-                <CardDescription>Choose a template to apply to your certificate</CardDescription>
-              </div>
-              <div className="flex items-center">
-                <Select onValueChange={handleDropdownSelect} disabled={dropdownLoading}>
-                  <SelectTrigger className="h-10 px-4 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all duration-200 text-sm font-medium w-[180px]">
-                    <SelectValue placeholder={dropdownLoading ? 'Loading...' : 'Choose Template'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map(t => (
-                      <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardHeader>
+              <CardTitle className="text-lg">Select Template</CardTitle>
+              <CardDescription>Choose a template to apply to your certificate</CardDescription>
             </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <Label className="text-sm font-medium whitespace-nowrap">Certificate Template:</Label>
+                  <Select
+                    value={selectedTemplateId}
+                    onValueChange={handleDropdownSelect}
+                    disabled={dropdownLoading}
+                  >
+                    <SelectTrigger className="w-full sm:w-[280px]">
+                      {dropdownLoading
+                        ? 'Loading...'
+                        : selectedTemplate
+                          ? selectedTemplate.name
+                          : 'Choose Template'}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(t => (
+                        <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
           </Card>
           
           <Dialog open={showPreview} onOpenChange={setShowPreview}>
