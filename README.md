@@ -1,73 +1,130 @@
-# Welcome to your Lovable project
+# Certificate Management Frontend
 
-## Project info
+A modern React + TypeScript frontend for managing certificates, signatories, and graduants, designed to work with a Django REST Framework backend. This app provides a secure, user-friendly interface for creating, editing, and distributing certificates, with robust authentication and role-based access.
 
-**URL**: https://lovable.dev/projects/70fb4a39-5af9-47f5-8aef-6061ca2ad2cd
+---
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Certificate Management:** Create, edit, and delete certificates with fields like name, description, CPE hours, logos, and issue/expiry dates.
+- **Signatory Management:** Add, edit, and remove signatories for each certificate.
+- **Graduant Management:** Add graduants individually or via bulk upload (CSV, Excel, JSON), with search and pagination.
+- **Template System:** Apply and preview certificate templates before use.
+- **Certificate Generation & Emailing:** Generate certificates and send them to graduants via email.
+- **Authentication:** JWT-based authentication with automatic token refresh and secure logout.
+- **Responsive Dashboard:** Modern, responsive UI with sidebar navigation.
+- **Error Handling:** User-friendly error messages and robust session management.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/70fb4a39-5af9-47f5-8aef-6061ca2ad2cd) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- [Node.js](https://nodejs.org/) (v16+ recommended)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+- A running instance of the [Django backend](https://www.djangoproject.com/) (see your backend repo for setup)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. **Clone the repository:**
 
-Follow these steps:
+   ```sh
+   git clone <YOUR_GIT_URL>
+   cd <YOUR_PROJECT_NAME>
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. **Install dependencies:**
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+   ```sh
+   npm install
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. **Configure the Backend URL:**
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+   - Open `src/services/api.ts`.
+   - Find the line:
+     ```ts
+     export const BASE_URL = 'http://127.0.0.1:8000';
+     ```
+   - Change the URL to match your backend server address if needed (e.g., for production or remote development).
+
+4. **Start the development server:**
+
+   ```sh
+   npm run dev
+   ```
+
+   The app will be available at [http://localhost:5173](http://localhost:5173) (or as indicated in your terminal).
+
+---
+
+## Project Structure
+
+- `src/pages/` — Main page components (certificate creation, graduant management, etc.)
+- `src/components/` — Reusable UI components (forms, layout, etc.)
+- `src/services/api.ts` — All API calls and backend URL configuration
+- `src/contexts/` — React context providers (authentication, etc.)
+- `src/hooks/` — Custom React hooks
+
+---
+
+## Customization
+
+### Setting the Backend URL
+
+To connect the frontend to your Django backend, update the `BASE_URL` in `src/services/api.ts`:
+
+```ts
+export const BASE_URL = 'http://127.0.0.1:8000'; // Change this to your backend URL
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Technologies Used
 
-**Use GitHub Codespaces**
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/) (build tool)
+- [Tailwind CSS](https://tailwindcss.com/) (utility-first CSS)
+- [shadcn/ui](https://ui.shadcn.com/) (UI components)
+- [Lucide Icons](https://lucide.dev/) (icon set)
+- [Django REST Framework](https://www.django-rest-framework.org/) (backend, not included here)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Deployment
 
-This project is built with:
+To build for production:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```sh
+npm run build
+```
 
-## How can I deploy this project?
+Then serve the `dist/` directory with your preferred static file server.
 
-Simply open [Lovable](https://lovable.dev/projects/70fb4a39-5af9-47f5-8aef-6061ca2ad2cd) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## Troubleshooting & Tips
 
-Yes, you can!
+- **CORS/CSRF Issues:**
+  - Ensure your backend CORS and CSRF settings allow requests from your frontend domain.
+  - For Django, set `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS` appropriately.
+- **Authentication:**
+  - All API endpoints are protected with JWT authentication.
+  - If you encounter authentication issues, check your backend and frontend URLs and token settings.
+- **Session Expiry:**
+  - The frontend will automatically attempt to refresh tokens. If refresh fails, you will be securely logged out and redirected to the login page.
+- **Bulk Uploads:**
+  - Graduants can be uploaded in bulk via CSV, Excel, or JSON. Ensure your file matches the required format (see the UI for template/download options).
+- **Template System:**
+  - Certificate templates can be previewed and applied. You can change or edit templates after certificate creation.
+- **Extending Functionality:**
+  - The codebase is modular and easy to extend. Add new pages to `src/pages/`, new API endpoints to `src/services/api.ts`, and new UI components to `src/components/`.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## License
+
+This project is licensed under the MIT License.
+
+---
